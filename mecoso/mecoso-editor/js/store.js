@@ -93,49 +93,133 @@ function addCategory(label) {
 
 /**
  * Resize + compress an uploaded image before storing it, so a single
- * large photo doesn't eat up the browser's local storage quota (which
- * is what silently breaks saving/deleting once storage is full).
+ * large photo doesn't eat up the browser's local storage quota.
  * Returns a Promise<dataURL>.
  */
-function readAndCompressImage(file, maxDim = 1000, quality = 0.82) {
+function readAndCompressImage(file, maxDim = 1400, quality = 0.78) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error);
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onerror = () => resolve(ev.target.result); // fall back to raw data
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round(height * (maxDim / width));
-            width = maxDim;
-          } else {
-            width = Math.round(width * (maxDim / height));
-            height = maxDim;
-          }
-        }
+    if (!file || !file.type || !file.type.startsWith("image/")) {
+      reject(new Error("Please choose an image file."));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+
+    const compress = (source, sourceWidth, sourceHeight) => {
+      try {
+        const scale = Math.min(
+          1,
+          maxDim / Math.max(sourceWidth, sourceHeight)
+        );
+
+        const width = Math.max(1, Math.round(sourceWidth * scale));
+        const height = Math.max(1, Math.round(sourceHeight * scale));
+
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        try {
-          resolve(canvas.toDataURL("image/jpeg", quality));
-        } catch (e) {
-          resolve(ev.target.result);
+
+        const ctx = canvas.getContext("2d", { alpha: false });
+
+        if (!ctx) {
+          throw new Error("Canvas is not available.");
         }
-      };
-      img.src = ev.target.result;
+
+        ctx.drawImage(source, 0, 0, width, height);
+
+        // Convert the original image to a smaller JPEG.
+        let result = canvas.toDataURL("image/jpeg", quality);
+
+        // Reduce quality further if the image is still large.
+        for (
+          let q = quality;
+          q >= 0.42 && result.length > 650000;
+          q -= 0.07
+        ) {
+          result = canvas.toDataURL("image/jpeg", q);
+        }
+
+        // Final size reduction if still too large.
+        if (result.length > 650000) {
+          const smaller = document.createElement("canvas");
+
+          const scale2 = Math.sqrt(650000 / result.length);
+
+          smaller.width = Math.max(
+            1,
+            Math.round(width * scale2)
+          );
+
+          smaller.height = Math.max(
+            1,
+            Math.round(height * scale2)
+          );
+
+          const ctx2 = smaller.getContext("2d", { alpha: false });
+
+          ctx2.drawImage(
+            canvas,
+            0,
+            0,
+            smaller.width,
+            smaller.height
+          );
+
+          result = smaller.toDataURL("image/jpeg", 0.62);
+        }
+
+        URL.revokeObjectURL(objectUrl);
+        resolve(result);
+
+      } catch (e) {
+        URL.revokeObjectURL(objectUrl);
+
+        reject(
+          new Error(
+            "Could not process this image. Please try a JPG or PNG photo."
+          )
+        );
+      }
     };
-    reader.readAsDataURL(file);
+
+    // Handles very large phone photos more reliably.
+    if (typeof createImageBitmap === "function") {
+      createImageBitmap(file)
+        .then(bitmap => {
+          try {
+            compress(bitmap, bitmap.width, bitmap.height);
+          } finally {
+            if (bitmap.close) bitmap.close();
+          }
+        })
+        .catch(() => loadWithImage());
+    } else {
+      loadWithImage();
+    }
+
+    function loadWithImage() {
+      const img = new Image();
+
+      img.onload = () => {
+        compress(
+          img,
+          img.naturalWidth || img.width,
+          img.naturalHeight || img.height
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        reject(
+          new Error(
+            "This image format could not be read by the browser. Try a JPG or PNG photo."
+          )
+        );
+      };
+
+      img.src = objectUrl;
+    }
   });
 }
-
-function formatNaira(n) {
-  return "₦" + Number(n).toLocaleString("en-NG");
-}
-
-function newProductId() {
-  return "bag_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-}
+```
