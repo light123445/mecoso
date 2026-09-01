@@ -91,7 +91,7 @@
 
     <div class="wizard-nav">
       <button class="btn-ghost" id="backBtn">Back</button>
-      <button class="btn-gold-full" id="nextBtn">Next</button>
+     <button type="button" class="btn-gold-full" id="nextBtn">Next</button>
     </div>
     <button class="btn-ghost" style="margin-top:12px" id="cancelBtn">Cancel</button>
   </div>
@@ -444,280 +444,75 @@ function renderReview() {
 /* ================================
    NEXT / SAVE BUTTON
 ================================ */
-
 nextBtn.addEventListener('click', function (event) {
+    event.preventDefault();
+    event.stopPropagation();
 
-  event.preventDefault();
+    // CATALOG → REVIEW
+    if (current === 4) {
 
+        const catalog = document.getElementById('catInput');
 
-  /* --------------------------------
-     CATALOG → REVIEW
-  -------------------------------- */
+        if (!catalog || !catalog.value) {
+            alert('Please select a catalog.');
+            return;
+        }
 
-  if (current === 4) {
+        // Save selected catalog
+        state.category = catalog.value;
 
-    const catalog =
-      document.getElementById('catInput');
+        // Go directly to Review
+        current = 5;
 
+        // Build the review information
+        renderReview();
 
-    if (!catalog || !catalog.value) {
+        // Show Review
+        showStep(5);
 
-      const error =
-        document.getElementById('err4');
+        // Make sure button now says Save
+        nextBtn.textContent = 'Save';
 
-      if (error) {
-        error.style.display = 'block';
-      }
-
-      return;
-
+        return;
     }
 
+    // REVIEW → SAVE
+    if (current === 5) {
 
-    /*
-       Save selected catalog
-    */
+        const product = {
+            id: newProductId(),
+            name: state.name,
+            category: state.category,
+            categoryLabel:
+                (getCategories().find(c => c.value === state.category) || {}).label
+                || state.category,
+            price: state.price,
+            img: state.img,
+            desc: state.desc
+        };
 
-    state.category =
-      catalog.value;
+        const saved = addProduct(product);
 
+        if (!saved) {
+            alert('The bag could not be saved.');
+            return;
+        }
 
-    /*
-       Make sure the previous
-       information is saved
-    */
+        document.getElementById('wizardCard').style.display = 'none';
+        document.getElementById('successView').style.display = 'block';
 
-    state.name =
-      document.getElementById('nameInput').value.trim();
+        return;
+    }
 
-    state.desc =
-      document.getElementById('descInput').value.trim();
+    // ALL OTHER PAGES
+    if (!validateStep(current)) {
+        return;
+    }
 
-    state.price =
-      Number(document.getElementById('priceInput').value);
-
-
-    /*
-       GO TO REVIEW
-    */
-
-    current = 5;
-
-    renderReview();
+    current++;
 
     showStep(current);
-
-    return;
-
-  }
-
-
-  /* --------------------------------
-     REVIEW → SAVE
-  -------------------------------- */
-
-  if (current === 5) {
-
-
-    /*
-       Make sure the latest information
-       is stored before saving.
-    */
-
-    state.name =
-      document.getElementById('nameInput').value.trim();
-
-    state.desc =
-      document.getElementById('descInput').value.trim();
-
-    state.price =
-      Number(document.getElementById('priceInput').value);
-
-    state.category =
-      document.getElementById('catInput').value;
-
-
-    /*
-       CHECK IMAGE
-    */
-
-    if (!state.img) {
-
-      alert('Please add a bag image.');
-
-      current = 0;
-
-      showStep(current);
-
-      return;
-
-    }
-
-
-    /*
-       CHECK NAME
-    */
-
-    if (!state.name) {
-
-      alert('Please enter the bag name.');
-
-      current = 1;
-
-      showStep(current);
-
-      return;
-
-    }
-
-
-    /*
-       CHECK DESCRIPTION
-    */
-
-    if (!state.desc) {
-
-      alert('Please enter a description.');
-
-      current = 2;
-
-      showStep(current);
-
-      return;
-
-    }
-
-
-    /*
-       CHECK PRICE
-    */
-
-    if (!state.price || state.price <= 0) {
-
-      alert('Please enter a valid price.');
-
-      current = 3;
-
-      showStep(current);
-
-      return;
-
-    }
-
-
-    /*
-       CHECK CATALOG
-    */
-
-    if (!state.category) {
-
-      alert('Please select a catalog.');
-
-      current = 4;
-
-      showStep(current);
-
-      return;
-
-    }
-
-
-    /*
-       CREATE BAG
-    */
-
-    const newBag = {
-
-      id: newProductId(),
-
-      name: state.name,
-
-      category: state.category,
-
-      categoryLabel:
-        (
-          getCategories().find(function (c) {
-
-            return c.value === state.category;
-
-          }) || {}
-        ).label || state.category,
-
-      price: state.price,
-
-      img: state.img,
-
-      desc: state.desc
-
-    };
-
-
-    /*
-       SAVE BAG
-    */
-
-    let saved = false;
-
-    try {
-
-      saved = addProduct(newBag);
-
-    } catch (error) {
-
-      console.error('Save error:', error);
-
-      saved = false;
-
-    }
-
-
-    /*
-       IF SAVE FAILED
-    */
-
-    if (!saved) {
-
-      alert(
-        'The bag could not be saved. Please try a smaller image.'
-      );
-
-      return;
-
-    }
-
-
-    /*
-       SUCCESS
-    */
-
-    document.getElementById('wizardCard').style.display =
-      'none';
-
-    document.getElementById('successView').style.display =
-      'block';
-
-    return;
-
-  }
-
-
-  /* --------------------------------
-     STEPS 1–4
-  -------------------------------- */
-
-  if (!validateStep(current)) {
-
-    return;
-
-  }
-
-
-  current++;
-
-  showStep(current);
-
 });
-
 
 /* ================================
    BACK BUTTON
