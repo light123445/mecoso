@@ -222,4 +222,4 @@ function readAndCompressImage(file, maxDim = 1400, quality = 0.78) {
     }
   });
 }
-```
+
