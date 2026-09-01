@@ -236,53 +236,67 @@
       '<strong style="color:var(--gold-light)">Full catalog after saving:</strong><br>' +
       getCategories().map(c => c.label).join(' &middot; ');
   }
+document.getElementById('nextBtn').addEventListener('click', function (e) {
+  e.preventDefault();
 
- document.getElementById('nextBtn').addEventListener('click', () => {
-
-  // When leaving the Catalog step
+  // CATALOG PAGE
+  // Step 5 is index 4
   if (current === 4) {
-    const selectedCatalog = document.getElementById('catInput').value;
 
-    // Make sure a catalog was selected
-    if (!selectedCatalog) {
-      const err = document.getElementById('err4');
-      if (err) {
-        err.textContent = 'Please select a catalog before continuing.';
-        err.style.display = 'block';
+    const catalog = document.getElementById('catInput');
+
+    // Make sure the user selected one of the existing catalogs
+    if (!catalog || !catalog.value) {
+      const error = document.getElementById('err4');
+      if (error) {
+        error.style.display = 'block';
       }
       return;
     }
 
     // Save the selected catalog
-    state.category = selectedCatalog;
+    state.category = catalog.value;
 
-    // Move directly to Review
+    // Move from Catalog directly to Review
     current = 5;
-    renderReview();
+
+    // Show the Review page FIRST
     showStep(current);
+
+    // Then fill the Review page
+    renderReview();
+
     return;
   }
 
-  // Validate all other steps normally
-  if (!validateStep(current)) return;
+  // ALL OTHER STEPS
+  if (!validateStep(current)) {
+    return;
+  }
 
-  // Save product when on Review
+  // SAVE BUTTON ON REVIEW PAGE
   if (current === steps.length - 1) {
+
     const ok = addProduct({
       id: newProductId(),
       name: state.name,
       category: state.category,
-      categoryLabel: (getCategories().find(c => c.value === state.category) || {}).label || state.category,
+      categoryLabel:
+        (getCategories().find(c => c.value === state.category) || {}).label
+        || state.category,
       price: state.price,
       img: state.img,
       desc: state.desc
     });
 
     if (!ok) {
-      const err = document.getElementById('err5') || document.getElementById('err4');
+      const err =
+        document.getElementById('err5') ||
+        document.getElementById('err4');
 
       if (err) {
-        err.textContent = "Couldn't save — your browser's storage may be full. Try clearing old data or use a smaller image.";
+        err.textContent =
+          "Couldn't save — your browser's storage may be full.";
         err.style.display = 'block';
       } else {
         alert("Couldn't save — your browser's storage may be full.");
@@ -293,12 +307,14 @@
 
     document.getElementById('wizardCard').style.display = 'none';
     document.getElementById('successView').style.display = 'block';
+
     return;
   }
 
-  // Move to the next step
+  // MOVE TO THE NEXT NORMAL STEP
   current++;
 
+  // If moving to Review
   if (current === steps.length - 1) {
     renderReview();
   }
