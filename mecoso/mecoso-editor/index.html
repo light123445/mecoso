@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mecoso Editor — Catalog Management</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<section class="editor-hero">
+  <div class="hero-bg active" style="background-image:url('assets/background1.jpeg')"></div>
+  <div class="hero-veil"></div>
+
+  <div class="editor-hero-content">
+    <div class="this-is">This is</div>
+    <div class="brand-script">Mecoso</div>
+    <div class="editor-tag">Editor &middot; Catalog Management</div>
+    <div>
+      <button class="btn-gold" id="loginOpenBtn">Login</button>
+    </div>
+  </div>
+</section>
+
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box">
+    <h3>Sign In</h3>
+    <div class="sub">Authorized access only</div>
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+    </div>
+    <div class="modal-error" id="loginError">Incorrect username or password.</div>
+    <button class="btn-gold-full" id="loginSubmitBtn">Login</button>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  const modal = document.getElementById('loginModal');
+  document.getElementById('loginOpenBtn').addEventListener('click', () => {
+    modal.classList.add('open');
+    document.getElementById('username').focus();
+  });
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+
+  function attemptLogin() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value;
+    if (logIn(u, p)) {
+      window.location.href = 'dashboard.html';
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+  document.getElementById('loginSubmitBtn').addEventListener('click', attemptLogin);
+  document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+
+  if (isLoggedIn()) window.location.href = 'dashboard.html';
+</script>
+</body>
+</html>
