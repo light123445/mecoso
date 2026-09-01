@@ -444,76 +444,92 @@ function renderReview() {
 /* ================================
    NEXT / SAVE BUTTON
 ================================ */
-nextBtn.addEventListener('click', function (event) {
+nextBtn.onclick = function (event) {
     event.preventDefault();
-    event.stopPropagation();
+    event.stopImmediatePropagation();
 
-    // CATALOG → REVIEW
+    console.log("NEXT CLICKED - current step:", current);
+
+    // CATALOG = STEP 5
     if (current === 4) {
 
-        const catalog = document.getElementById('catInput');
+        const catalogSelect = document.getElementById("catInput");
 
-        if (!catalog || !catalog.value) {
-            alert('Please select a catalog.');
-            return;
+        if (!catalogSelect) {
+            alert("Catalog selector not found.");
+            return false;
         }
 
-        // Save selected catalog
-        state.category = catalog.value;
+        const selectedCatalog = catalogSelect.value;
 
-        // Go directly to Review
+        if (!selectedCatalog) {
+            alert("Please select a catalog.");
+            return false;
+        }
+
+        // Save the selected catalog
+        state.category = selectedCatalog;
+
+        console.log("Selected catalog:", state.category);
+
+        // Go to Review
         current = 5;
 
-        // Build the review information
+        // Create the review information
         renderReview();
 
-        // Show Review
+        // Display Review
         showStep(5);
 
-        // Make sure button now says Save
-        nextBtn.textContent = 'Save';
+        console.log("Moved to Review");
 
-        return;
+        return false;
     }
 
-    // REVIEW → SAVE
+    // REVIEW = STEP 6
     if (current === 5) {
+
+        console.log("SAVE BUTTON CLICKED");
 
         const product = {
             id: newProductId(),
             name: state.name,
             category: state.category,
             categoryLabel:
-                (getCategories().find(c => c.value === state.category) || {}).label
-                || state.category,
+                (getCategories().find(function (c) {
+                    return c.value === state.category;
+                }) || {}).label || state.category,
             price: state.price,
             img: state.img,
             desc: state.desc
         };
 
+        console.log("Product:", product);
+
         const saved = addProduct(product);
 
         if (!saved) {
-            alert('The bag could not be saved.');
-            return;
+            alert("The bag could not be saved.");
+            return false;
         }
 
-        document.getElementById('wizardCard').style.display = 'none';
-        document.getElementById('successView').style.display = 'block';
+        document.getElementById("wizardCard").style.display = "none";
+        document.getElementById("successView").style.display = "block";
 
-        return;
+        return false;
     }
 
-    // ALL OTHER PAGES
+    // NORMAL STEPS
     if (!validateStep(current)) {
-        return;
+        return false;
     }
 
     current++;
 
     showStep(current);
-});
 
+    return false;
+};
 /* ================================
    BACK BUTTON
 ================================ */
