@@ -120,548 +120,661 @@
 <script src="js/auth.js"></script>
 <script src="js/store.js"></script>
 <script>
-   requireLogin();
+  requireLogin();
 
-  const steps = Array.from(document.querySelectorAll('.wizard-step'));
-  const stepTrack = document.getElementById('stepTrack');
-  const nextBtn = document.getElementById('nextBtn');
-  const backBtn = document.getElementById('backBtn');
+const steps = Array.from(document.querySelectorAll('.wizard-step'));
+const stepTrack = document.getElementById('stepTrack');
+const nextBtn = document.getElementById('nextBtn');
+const backBtn = document.getElementById('backBtn');
 
-  let current = 0;
+let current = 0;
 
-  const state = {
-    img: '',
-    name: '',
-    desc: '',
-    price: '',
-    category: ''
-  };
-
-
-  /* =========================
-     CREATE STEP DOTS
-  ========================= */
-
-  steps.forEach(() => {
-    const dot = document.createElement('div');
-    dot.className = 'step-dot';
-    stepTrack.appendChild(dot);
-  });
+const state = {
+  img: '',
+  name: '',
+  desc: '',
+  price: '',
+  category: ''
+};
 
 
-  /* =========================
-     LOAD CATALOGS
-  ========================= */
+/* ================================
+   STEP INDICATORS
+================================ */
 
-  function renderCatSelect() {
-
-    const select = document.getElementById('catInput');
-
-    select.innerHTML = '';
-
-    getCategories().forEach(c => {
-
-      const option = document.createElement('option');
-
-      option.value = c.value;
-      option.textContent = c.label;
-
-      select.appendChild(option);
-
-    });
-
-    if (select.options.length > 0) {
-      state.category = select.value;
-    }
-
-    document.getElementById('catList').innerHTML =
-      '<strong style="color:var(--gold-light)">Available catalog:</strong><br>' +
-      getCategories().map(c => c.label).join(' &middot; ');
-  }
-
-  renderCatSelect();
+steps.forEach(() => {
+  const dot = document.createElement('div');
+  dot.className = 'step-dot';
+  stepTrack.appendChild(dot);
+});
 
 
-  /* =========================
-     IMAGE UPLOAD
-  ========================= */
+/* ================================
+   CATALOGS
+================================ */
 
-  document.getElementById('imgDrop').addEventListener('click', function () {
-    document.getElementById('imgInput').click();
-  });
+function renderCatSelect() {
 
+  const select = document.getElementById('catInput');
 
-  document.getElementById('imgInput').addEventListener('change', function (e) {
+  select.innerHTML = '';
 
-    const file = e.target.files[0];
+  getCategories().forEach(category => {
 
-    if (!file) return;
+    const option = document.createElement('option');
 
-    readAndCompressImage(file)
-      .then(function (dataUrl) {
+    option.value = category.value;
+    option.textContent = category.label;
 
-        state.img = dataUrl;
-
-        document.getElementById('imgPreviewWrap').innerHTML =
-          '<img src="' + state.img + '" alt="preview">';
-
-      })
-      .catch(function () {
-
-        alert('Unable to load this image.');
-
-      });
+    select.appendChild(option);
 
   });
 
+  if (select.options.length > 0) {
+    state.category = select.options[0].value;
+  }
 
-  /* =========================
-     STEP DOTS
-  ========================= */
+  document.getElementById('catList').innerHTML =
+    '<strong style="color:var(--gold-light)">Available catalog:</strong><br>' +
+    getCategories().map(c => c.label).join(' &middot; ');
+}
 
-  function updateDots() {
+renderCatSelect();
 
-    document.querySelectorAll('.step-dot').forEach(function (dot, i) {
 
-      dot.classList.toggle('active', i === current);
-      dot.classList.toggle('done', i < current);
+/* ================================
+   IMAGE UPLOAD
+================================ */
+
+document.getElementById('imgInput').addEventListener('change', function (event) {
+
+  const file = event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file.');
+    return;
+  }
+
+  /*
+     Compress the image automatically.
+     The original size of the picture does not matter.
+  */
+
+  readAndCompressImage(file, 1200, 0.75)
+    .then(function (dataUrl) {
+
+      state.img = dataUrl;
+
+      document.getElementById('imgPreviewWrap').innerHTML =
+        '<img src="' + dataUrl + '" alt="Bag preview">';
+
+      document.getElementById('err0').style.display = 'none';
+
+    })
+    .catch(function (error) {
+
+      console.error('Image error:', error);
+
+      alert('This image could not be processed. Please try another picture.');
 
     });
 
+});
+
+
+/* ================================
+   STEP DISPLAY
+================================ */
+
+function updateDots() {
+
+  document.querySelectorAll('.step-dot').forEach(function (dot, index) {
+
+    dot.classList.toggle('active', index === current);
+    dot.classList.toggle('done', index < current);
+
+  });
+
+}
+
+
+function showStep(index) {
+
+  steps.forEach(function (step, i) {
+
+    step.style.display =
+      i === index ? 'block' : 'none';
+
+  });
+
+  backBtn.style.visibility =
+    index === 0 ? 'hidden' : 'visible';
+
+  nextBtn.textContent =
+    index === steps.length - 1 ? 'Save' : 'Next';
+
+  updateDots();
+
+}
+
+
+/* ================================
+   VALIDATION
+================================ */
+
+function validateStep(index) {
+
+  const error =
+    document.getElementById('err' + index);
+
+  let valid = true;
+
+
+  /* IMAGE */
+
+  if (index === 0) {
+
+    valid = !!state.img;
+
   }
 
 
-  /* =========================
-     SHOW STEP
-  ========================= */
+  /* NAME */
 
-  function showStep(index) {
+  if (index === 1) {
 
-    steps.forEach(function (step, i) {
+    state.name =
+      document.getElementById('nameInput').value.trim();
 
-      step.style.display = i === index ? 'block' : 'none';
+    valid = !!state.name;
+
+  }
+
+
+  /* DESCRIPTION */
+
+  if (index === 2) {
+
+    state.desc =
+      document.getElementById('descInput').value.trim();
+
+    valid = !!state.desc;
+
+  }
+
+
+  /* PRICE */
+
+  if (index === 3) {
+
+    const value =
+      document.getElementById('priceInput').value;
+
+    state.price = Number(value);
+
+    valid =
+      value !== '' &&
+      state.price > 0;
+
+  }
+
+
+  /* CATALOG */
+
+  if (index === 4) {
+
+    const select =
+      document.getElementById('catInput');
+
+    state.category =
+      select ? select.value : '';
+
+    valid = !!state.category;
+
+  }
+
+
+  if (error) {
+
+    error.style.display =
+      valid ? 'none' : 'block';
+
+  }
+
+  return valid;
+
+}
+
+
+/* ================================
+   REVIEW
+================================ */
+
+function renderReview() {
+
+  /*
+     Get the selected catalog
+  */
+
+  const catalog =
+    getCategories().find(function (c) {
+
+      return c.value === state.category;
 
     });
 
-    backBtn.style.visibility =
-      index === 0 ? 'hidden' : 'visible';
 
-    nextBtn.textContent =
-      index === steps.length - 1 ? 'Save' : 'Next';
-
-    updateDots();
-
-  }
+  const reviewList =
+    document.getElementById('reviewList');
 
 
-  /* =========================
-     VALIDATE STEPS
-  ========================= */
+  /*
+     Show EVERYTHING entered
+  */
 
-  function validateStep(index) {
+  reviewList.innerHTML = `
 
-    const error = document.getElementById('err' + index);
+    <div style="text-align:center;margin-bottom:20px;">
 
-    let valid = true;
+      ${
+        state.img
+          ? `
+            <img
+              src="${state.img}"
+              alt="Bag preview"
+              style="
+                width:180px;
+                height:180px;
+                object-fit:cover;
+                border-radius:12px;
+                display:block;
+                margin:0 auto;
+              "
+            >
+          `
+          : ''
+      }
 
-
-    if (index === 0) {
-
-      valid = !!state.img;
-
-    }
-
-
-    if (index === 1) {
-
-      state.name =
-        document.getElementById('nameInput').value.trim();
-
-      valid = !!state.name;
-
-    }
-
-
-    if (index === 2) {
-
-      state.desc =
-        document.getElementById('descInput').value.trim();
-
-      valid = !!state.desc;
-
-    }
+    </div>
 
 
-    if (index === 3) {
-
-      const priceValue =
-        document.getElementById('priceInput').value;
-
-      state.price = Number(priceValue);
-
-      valid =
-        priceValue !== '' &&
-        state.price > 0;
-
-    }
+    <div class="r-row">
+      <span>Name</span>
+      <span>${state.name}</span>
+    </div>
 
 
-    if (index === 4) {
-
-      const catalog =
-        document.getElementById('catInput');
-
-      state.category =
-        catalog ? catalog.value : '';
-
-      valid = !!state.category;
-
-    }
+    <div class="r-row">
+      <span>Description</span>
+      <span style="max-width:60%;text-align:right">
+        ${state.desc}
+      </span>
+    </div>
 
 
-    if (error) {
-
-      error.style.display =
-        valid ? 'none' : 'block';
-
-    }
+    <div class="r-row">
+      <span>Price</span>
+      <span>${formatNaira(state.price)}</span>
+    </div>
 
 
-    return valid;
+    <div class="r-row">
+      <span>Catalog</span>
+      <span>
+        ${catalog ? catalog.label : state.category}
+      </span>
+    </div>
 
-  }
+  `;
 
 
-  /* =========================
-     REVIEW PAGE
-  ========================= */
+  document.getElementById('catListFinal').innerHTML =
 
-  function renderReview() {
+    '<strong style="color:var(--gold-light)">Catalog:</strong><br>' +
 
-    const reviewList =
-      document.getElementById('reviewList');
+    (catalog ? catalog.label : state.category);
+
+}
+
+
+/* ================================
+   NEXT / SAVE BUTTON
+================================ */
+
+nextBtn.addEventListener('click', function (event) {
+
+  event.preventDefault();
+
+
+  /* --------------------------------
+     CATALOG → REVIEW
+  -------------------------------- */
+
+  if (current === 4) {
 
     const catalog =
-      getCategories().find(function (c) {
-        return c.value === state.category;
-      });
+      document.getElementById('catInput');
 
 
-    reviewList.innerHTML = `
+    if (!catalog || !catalog.value) {
 
-      <div class="r-row">
-        <span>Name</span>
-        <span>${state.name}</span>
-      </div>
+      const error =
+        document.getElementById('err4');
 
-      <div class="r-row">
-        <span>Description</span>
-        <span style="max-width:60%;text-align:right">
-          ${state.desc}
-        </span>
-      </div>
+      if (error) {
+        error.style.display = 'block';
+      }
 
-      <div class="r-row">
-        <span>Price</span>
-        <span>${formatNaira(state.price)}</span>
-      </div>
+      return;
 
-      <div class="r-row">
-        <span>Catalog</span>
-        <span>
-          ${catalog ? catalog.label : state.category}
-        </span>
-      </div>
-
-    `;
+    }
 
 
-    document.getElementById('catListFinal').innerHTML =
+    /*
+       Save selected catalog
+    */
 
-      '<strong style="color:var(--gold-light)">Catalog:</strong><br>' +
+    state.category =
+      catalog.value;
 
-      (catalog
-        ? catalog.label
-        : state.category);
+
+    /*
+       Make sure the previous
+       information is saved
+    */
+
+    state.name =
+      document.getElementById('nameInput').value.trim();
+
+    state.desc =
+      document.getElementById('descInput').value.trim();
+
+    state.price =
+      Number(document.getElementById('priceInput').value);
+
+
+    /*
+       GO TO REVIEW
+    */
+
+    current = 5;
+
+    renderReview();
+
+    showStep(current);
+
+    return;
 
   }
 
 
-  /* =========================
-     NEXT / SAVE BUTTON
-  ========================= */
+  /* --------------------------------
+     REVIEW → SAVE
+  -------------------------------- */
 
-  nextBtn.addEventListener('click', function (event) {
-
-    event.preventDefault();
+  if (current === 5) {
 
 
-    /* --------------------------------
-       CATALOG → REVIEW
-    -------------------------------- */
+    /*
+       Make sure the latest information
+       is stored before saving.
+    */
 
-    if (current === 4) {
+    state.name =
+      document.getElementById('nameInput').value.trim();
 
-      const catalog =
-        document.getElementById('catInput');
+    state.desc =
+      document.getElementById('descInput').value.trim();
 
+    state.price =
+      Number(document.getElementById('priceInput').value);
 
-      if (!catalog || !catalog.value) {
-
-        const error =
-          document.getElementById('err4');
-
-        if (error) {
-          error.style.display = 'block';
-        }
-
-        return;
-
-      }
+    state.category =
+      document.getElementById('catInput').value;
 
 
-      // Save the selected catalog
-      state.category = catalog.value;
+    /*
+       CHECK IMAGE
+    */
 
+    if (!state.img) {
 
-      // IMPORTANT:
-      // Save all previous fields again
-      state.name =
-        document.getElementById('nameInput').value.trim();
+      alert('Please add a bag image.');
 
-      state.desc =
-        document.getElementById('descInput').value.trim();
+      current = 0;
 
-      state.price =
-        Number(document.getElementById('priceInput').value);
-
-
-      // Go to Review
-      current = 5;
-
-
-      // Create Review information
-      renderReview();
-
-
-      // Display Review
       showStep(current);
 
+      return;
+
+    }
+
+
+    /*
+       CHECK NAME
+    */
+
+    if (!state.name) {
+
+      alert('Please enter the bag name.');
+
+      current = 1;
+
+      showStep(current);
 
       return;
 
     }
 
 
-    /* --------------------------------
-       REVIEW → SAVE
-    -------------------------------- */
+    /*
+       CHECK DESCRIPTION
+    */
 
-    if (current === 5) {
+    if (!state.desc) {
 
+      alert('Please enter a description.');
 
-      // Get the latest values
-      state.name =
-        document.getElementById('nameInput').value.trim();
+      current = 2;
 
-      state.desc =
-        document.getElementById('descInput').value.trim();
-
-      state.price =
-        Number(document.getElementById('priceInput').value);
-
-      state.category =
-        document.getElementById('catInput').value;
-
-
-      // Make sure everything exists
-
-      if (!state.img) {
-
-        alert('Please add an image before saving.');
-
-        return;
-
-      }
-
-
-      if (!state.name) {
-
-        alert('Please enter a bag name.');
-
-        return;
-
-      }
-
-
-      if (!state.desc) {
-
-        alert('Please enter a description.');
-
-        return;
-
-      }
-
-
-      if (!state.price || state.price <= 0) {
-
-        alert('Please enter a valid price.');
-
-        return;
-
-      }
-
-
-      if (!state.category) {
-
-        alert('Please select a catalog.');
-
-        return;
-
-      }
-
-
-      /* CREATE PRODUCT */
-
-      const product = {
-
-        id: newProductId(),
-
-        name: state.name,
-
-        category: state.category,
-
-        categoryLabel:
-          (
-            getCategories().find(function (c) {
-              return c.value === state.category;
-            }) || {}
-          ).label || state.category,
-
-        price: state.price,
-
-        img: state.img,
-
-        desc: state.desc
-
-      };
-
-
-      /* SAVE PRODUCT */
-
-      let saved = false;
-
-      try {
-
-        saved = addProduct(product);
-
-      } catch (error) {
-
-        console.error('SAVE ERROR:', error);
-
-        saved = false;
-
-      }
-
-
-      if (!saved) {
-
-        alert(
-          'The bag could not be saved. Please try again with a smaller image.'
-        );
-
-        return;
-
-      }
-
-
-      /* SUCCESS */
-
-      document.getElementById('wizardCard').style.display =
-        'none';
-
-      document.getElementById('successView').style.display =
-        'block';
-
+      showStep(current);
 
       return;
 
     }
 
 
-    /* --------------------------------
-       NORMAL STEPS 1 → 4
-    -------------------------------- */
+    /*
+       CHECK PRICE
+    */
 
-    if (!validateStep(current)) {
+    if (!state.price || state.price <= 0) {
+
+      alert('Please enter a valid price.');
+
+      current = 3;
+
+      showStep(current);
 
       return;
 
     }
 
 
-    current++;
+    /*
+       CHECK CATALOG
+    */
+
+    if (!state.category) {
+
+      alert('Please select a catalog.');
+
+      current = 4;
+
+      showStep(current);
+
+      return;
+
+    }
 
 
-    showStep(current);
+    /*
+       CREATE BAG
+    */
+
+    const newBag = {
+
+      id: newProductId(),
+
+      name: state.name,
+
+      category: state.category,
+
+      categoryLabel:
+        (
+          getCategories().find(function (c) {
+
+            return c.value === state.category;
+
+          }) || {}
+        ).label || state.category,
+
+      price: state.price,
+
+      img: state.img,
+
+      desc: state.desc
+
+    };
+
+
+    /*
+       SAVE BAG
+    */
+
+    let saved = false;
+
+    try {
+
+      saved = addProduct(newBag);
+
+    } catch (error) {
+
+      console.error('Save error:', error);
+
+      saved = false;
+
+    }
+
+
+    /*
+       IF SAVE FAILED
+    */
+
+    if (!saved) {
+
+      alert(
+        'The bag could not be saved. Please try a smaller image.'
+      );
+
+      return;
+
+    }
+
+
+    /*
+       SUCCESS
+    */
+
+    document.getElementById('wizardCard').style.display =
+      'none';
+
+    document.getElementById('successView').style.display =
+      'block';
+
+    return;
+
+  }
+
+
+  /* --------------------------------
+     STEPS 1–4
+  -------------------------------- */
+
+  if (!validateStep(current)) {
+
+    return;
+
+  }
+
+
+  current++;
+
+  showStep(current);
+
+});
+
+
+/* ================================
+   BACK BUTTON
+================================ */
+
+backBtn.addEventListener('click', function (event) {
+
+  event.preventDefault();
+
+  if (current === 0) {
+    return;
+  }
+
+  current--;
+
+  showStep(current);
+
+});
+
+
+/* ================================
+   CANCEL
+================================ */
+
+const cancelModal =
+  document.getElementById('cancelModal');
+
+
+document.getElementById('cancelBtn')
+  .addEventListener('click', function () {
+
+    cancelModal.classList.add('open');
 
   });
 
 
-  /* =========================
-     BACK BUTTON
-  ========================= */
+document.getElementById('cancelNo')
+  .addEventListener('click', function () {
 
-  backBtn.addEventListener('click', function (event) {
-
-    event.preventDefault();
-
-    if (current === 0) return;
-
-    current--;
-
-    showStep(current);
+    cancelModal.classList.remove('open');
 
   });
 
 
-  /* =========================
-     CANCEL
-  ========================= */
+document.getElementById('cancelYes')
+  .addEventListener('click', function () {
 
-  const cancelModal =
-    document.getElementById('cancelModal');
+    window.location.href = 'add.html';
 
-
-  document.getElementById('cancelBtn')
-    .addEventListener('click', function () {
-
-      cancelModal.classList.add('open');
-
-    });
+  });
 
 
-  document.getElementById('cancelNo')
-    .addEventListener('click', function () {
+/* ================================
+   START
+================================ */
 
-      cancelModal.classList.remove('open');
-
-    });
-
-
-  document.getElementById('cancelYes')
-    .addEventListener('click', function () {
-
-      window.location.href = 'add.html';
-
-    });
-
-
-  /* =========================
-     START WIZARD
-  ========================= */
-
-  showStep(0);
+showStep(0);
 </script>
 </body>
 </html>
