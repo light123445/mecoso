@@ -148,15 +148,51 @@
   }
   renderCatSelect();
 
-  document.getElementById('imgDrop').addEventListener('click', () => document.getElementById('imgInput').click());
-  document.getElementById('imgInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    readAndCompressImage(file).then(dataUrl => {
-      state.img = dataUrl;
-      document.getElementById('imgPreviewWrap').innerHTML = `<img src="${state.img}" alt="preview">`;
-    });
-  });
+ document.getElementById('imgInput').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+
+  if (!file) return;
+
+  const preview = document.getElementById('imgPreviewWrap');
+  const error = document.getElementById('err0');
+
+  // Make sure the selected file is actually an image
+  if (!file.type.startsWith('image/')) {
+    state.img = '';
+    preview.innerHTML = '';
+    error.textContent = 'Please select a valid image.';
+    error.style.display = 'block';
+    return;
+  }
+
+  try {
+    preview.innerHTML = '<div class="hint">Processing image...</div>';
+
+    const dataUrl = await readAndCompressImage(file);
+
+    if (!dataUrl) {
+      throw new Error('Image could not be processed.');
+    }
+
+    state.img = dataUrl;
+
+    preview.innerHTML = `
+      <img src="${state.img}" alt="Bag preview">
+    `;
+
+    error.style.display = 'none';
+
+  } catch (error) {
+    console.error('Image upload error:', error);
+
+    state.img = '';
+    preview.innerHTML = '';
+    
+    const err = document.getElementById('err0');
+    err.textContent = 'Unable to load this image. Please choose another photo.';
+    err.style.display = 'block';
+  }
+});
 
   function updateDots() {
     document.querySelectorAll('.step-dot').forEach((d, i) => {
