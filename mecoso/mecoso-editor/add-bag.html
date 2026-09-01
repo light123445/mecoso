@@ -237,38 +237,74 @@
       getCategories().map(c => c.label).join(' &middot; ');
   }
 
-  document.getElementById('nextBtn').addEventListener('click', () => {
-    if (!validateStep(current)) return;
-    if (current === steps.length - 1) {
-      // Save
-      const ok = addProduct({
-        id: newProductId(),
-        name: state.name,
-        category: state.category,
-        categoryLabel: (getCategories().find(c => c.value === state.category) || {}).label || state.category,
-        price: state.price,
-        img: state.img,
-        desc: state.desc
-      });
-      if (!ok) {
-        const err = document.getElementById('err5') || document.getElementById('err4');
-        if (err) {
-          err.textContent = "Couldn't save — your browser's storage may be full. Try clearing old data or use a smaller image.";
-          err.style.display = 'block';
-        } else {
-          alert("Couldn't save — your browser's storage may be full.");
-        }
-        return;
+ document.getElementById('nextBtn').addEventListener('click', () => {
+
+  // When leaving the Catalog step
+  if (current === 4) {
+    const selectedCatalog = document.getElementById('catInput').value;
+
+    // Make sure a catalog was selected
+    if (!selectedCatalog) {
+      const err = document.getElementById('err4');
+      if (err) {
+        err.textContent = 'Please select a catalog before continuing.';
+        err.style.display = 'block';
       }
-      document.getElementById('wizardCard').style.display = 'none';
-      document.getElementById('successView').style.display = 'block';
       return;
     }
-    current++;
-    if (current === steps.length - 1) renderReview();
-    showStep(current);
-  });
 
+    // Save the selected catalog
+    state.category = selectedCatalog;
+
+    // Move directly to Review
+    current = 5;
+    renderReview();
+    showStep(current);
+    return;
+  }
+
+  // Validate all other steps normally
+  if (!validateStep(current)) return;
+
+  // Save product when on Review
+  if (current === steps.length - 1) {
+    const ok = addProduct({
+      id: newProductId(),
+      name: state.name,
+      category: state.category,
+      categoryLabel: (getCategories().find(c => c.value === state.category) || {}).label || state.category,
+      price: state.price,
+      img: state.img,
+      desc: state.desc
+    });
+
+    if (!ok) {
+      const err = document.getElementById('err5') || document.getElementById('err4');
+
+      if (err) {
+        err.textContent = "Couldn't save — your browser's storage may be full. Try clearing old data or use a smaller image.";
+        err.style.display = 'block';
+      } else {
+        alert("Couldn't save — your browser's storage may be full.");
+      }
+
+      return;
+    }
+
+    document.getElementById('wizardCard').style.display = 'none';
+    document.getElementById('successView').style.display = 'block';
+    return;
+  }
+
+  // Move to the next step
+  current++;
+
+  if (current === steps.length - 1) {
+    renderReview();
+  }
+
+  showStep(current);
+});
   document.getElementById('backBtn').addEventListener('click', () => {
     if (current === 0) return;
     current--;
