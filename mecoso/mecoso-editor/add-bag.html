@@ -418,7 +418,7 @@ function renderReview() {
 
     <div class="r-row">
       <span>Price</span>
-      <span>${formatNaira(state.price)}</span>
+      <span>₦${Number(state.price).toLocaleString()}</span>
     </div>
 
 
@@ -492,7 +492,7 @@ nextBtn.onclick = function (event) {
         console.log("SAVE BUTTON CLICKED");
 
         const product = {
-            id: newProductId(),
+            id: 'bag-' + Date.now(),
             name: state.name,
             category: state.category,
             categoryLabel:
