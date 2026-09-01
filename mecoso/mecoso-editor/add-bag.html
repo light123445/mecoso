@@ -224,60 +224,131 @@
     return ok;
   }
 
-  function renderReview() {
-    const cat = getCategories().find(c => c.value === state.category);
-    document.getElementById('reviewList').innerHTML = `
-      <div class="r-row"><span>Name</span><span>${state.name}</span></div>
-      <div class="r-row"><span>Description</span><span style="max-width:60%;text-align:right">${state.desc}</span></div>
-      <div class="r-row"><span>Price</span><span>${formatNaira(state.price)}</span></div>
-      <div class="r-row"><span>Catalog</span><span>${cat ? cat.label : state.category}</span></div>
-    `;
-    document.getElementById('catListFinal').innerHTML =
-      '<strong style="color:var(--gold-light)">Full catalog after saving:</strong><br>' +
-      getCategories().map(c => c.label).join(' &middot; ');
-  }
+ function renderReview() {
+  const cat = getCategories().find(c => c.value === state.category);
+
+  const reviewList = document.getElementById('reviewList');
+
+  reviewList.innerHTML = `
+    <div style="text-align:center; margin-bottom:25px;">
+      ${
+        state.img
+          ? `<img src="${state.img}" alt="Bag Preview"
+              style="width:180px;height:180px;object-fit:cover;border-radius:12px;">
+            `
+          : ''
+      }
+    </div>
+
+    <div class="r-row">
+      <span>Name</span>
+      <span>${state.name}</span>
+    </div>
+
+    <div class="r-row">
+      <span>Description</span>
+      <span style="max-width:60%;text-align:right">
+        ${state.desc}
+      </span>
+    </div>
+
+    <div class="r-row">
+      <span>Price</span>
+      <span>${formatNaira(state.price)}</span>
+    </div>
+
+    <div class="r-row">
+      <span>Catalog</span>
+      <span>${cat ? cat.label : state.category}</span>
+    </div>
+  `;
+
+  document.getElementById('catListFinal').innerHTML =
+    '<strong style="color:var(--gold-light)">Catalog:</strong><br>' +
+    getCategories().map(c => c.label).join(' &middot; ');
+}
 document.getElementById('nextBtn').addEventListener('click', function (e) {
   e.preventDefault();
 
-  // CATALOG PAGE
-  // Step 5 is index 4
+  /*
+   * STEP 5 — CATALOG
+   */
   if (current === 4) {
 
-    const catalog = document.getElementById('catInput');
+    const catalogSelect = document.getElementById('catInput');
 
-    // Make sure the user selected one of the existing catalogs
-    if (!catalog || !catalog.value) {
+    if (!catalogSelect || !catalogSelect.value) {
       const error = document.getElementById('err4');
+
       if (error) {
+        error.textContent = 'Please choose a catalog.';
         error.style.display = 'block';
       }
+
       return;
     }
 
     // Save the selected catalog
-    state.category = catalog.value;
+    state.category = catalogSelect.value;
 
-    // Move from Catalog directly to Review
+    // Move to Review
     current = 5;
 
-    // Show the Review page FIRST
-    showStep(current);
-
-    // Then fill the Review page
+    // Build the Review information
     renderReview();
 
+    // Show Review page
+    showStep(current);
+
     return;
   }
 
-  // ALL OTHER STEPS
-  if (!validateStep(current)) {
-    return;
-  }
 
-  // SAVE BUTTON ON REVIEW PAGE
-  if (current === steps.length - 1) {
+  /*
+   * STEP 6 — REVIEW / SAVE
+   */
+  if (current === 5) {
 
-    const ok = addProduct({
+    // Make absolutely sure all information is stored
+    state.name = document.getElementById('nameInput').value.trim();
+    state.desc = document.getElementById('descInput').value.trim();
+    state.price = Number(document.getElementById('priceInput').value);
+
+    const catalogSelect = document.getElementById('catInput');
+
+    if (catalogSelect) {
+      state.category = catalogSelect.value;
+    }
+
+    // Check that the required information exists
+    if (!state.img) {
+      alert('Please add a bag image.');
+      return;
+    }
+
+    if (!state.name) {
+      alert('Please enter a bag name.');
+      return;
+    }
+
+    if (!state.desc) {
+      alert('Please enter a description.');
+      return;
+    }
+
+    if (!state.price || state.price <= 0) {
+      alert('Please enter a valid price.');
+      return;
+    }
+
+    if (!state.category) {
+      alert('Please select a catalog.');
+      return;
+    }
+
+
+    // Create the new bag
+    const newBag = {
       id: newProductId(),
       name: state.name,
       category: state.category,
@@ -287,37 +358,39 @@ document.getElementById('nextBtn').addEventListener('click', function (e) {
       price: state.price,
       img: state.img,
       desc: state.desc
-    });
+    };
 
-    if (!ok) {
-      const err =
-        document.getElementById('err5') ||
-        document.getElementById('err4');
 
-      if (err) {
-        err.textContent =
-          "Couldn't save — your browser's storage may be full.";
-        err.style.display = 'block';
-      } else {
-        alert("Couldn't save — your browser's storage may be full.");
-      }
+    // Save the bag
+    const saved = addProduct(newBag);
 
+
+    // If saving failed
+    if (!saved) {
+      alert(
+        "The bag could not be saved. Your browser storage may be full. " +
+        "Try using a smaller image."
+      );
       return;
     }
 
+
+    // Saving was successful
     document.getElementById('wizardCard').style.display = 'none';
     document.getElementById('successView').style.display = 'block';
 
     return;
   }
 
-  // MOVE TO THE NEXT NORMAL STEP
-  current++;
 
-  // If moving to Review
-  if (current === steps.length - 1) {
-    renderReview();
+  /*
+   * STEPS 1–4
+   */
+  if (!validateStep(current)) {
+    return;
   }
+
+  current++;
 
   showStep(current);
 });
