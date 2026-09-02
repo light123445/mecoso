@@ -1,0 +1,9 @@
+{
+  "name": "mecoso-site",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Mecoso Handcrafted — storefront, editor, and shared catalog function",
+  "dependencies": {
+    "@netlify/blobs": "^11.0.2"
+  }
+}
