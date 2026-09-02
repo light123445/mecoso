@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mecoso Handcrafted — Luxury Handcrafted Bags</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="site-nav">
+  <a href="index.html" class="wordmark-btn">
+    <img src="assets/logo_text.jpeg" alt="Mecoso Handcrafted" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'wordmark-text',textContent:'Mecoso Handcrafted'}))">
+  </a>
+  <button class="hamburger" aria-label="Menu"><span></span><span></span><span></span><span class="menu-badge"></span></button>
+</nav>
+
+<div class="scrim"></div>
+<div class="nav-drawer">
+  <a href="index.html">Home</a>
+  <a href="catalog.html">Catalog</a>
+  <a href="cart.html">Cart <span class="drawer-cart-count"></span></a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg" style="background-image:url('assets/background1.jpeg')"></div>
+  <div class="hero-bg" style="background-image:url('assets/background2.jpeg')"></div>
+  <div class="hero-bg" style="background-image:url('assets/background3.jpeg')"></div>
+  <div class="hero-bg" style="background-image:url('assets/background4.jpeg')"></div>
+  <div class="hero-bg" style="background-image:url('assets/background5.jpeg')"></div>
+  <div class="hero-veil"></div>
+
+  <div class="hero-mark">
+    <div class="this-is">This is</div>
+    <div class="brand-script">Mecoso</div>
+    <div class="hero-sub">Handcrafted Leather &middot; Painted by Hand &middot; Made to Carry a Story</div>
+  </div>
+
+  <div class="hero-cta">
+    <a href="catalog.html" class="btn-gold">Explore the Collection</a>
+  </div>
+
+  <div class="social-dock">
+    <a href="https://www.instagram.com/mecoso_handcrafted" target="_blank" rel="noopener" aria-label="Instagram">
+      <svg viewBox="0 0 24 24" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/></svg>
+    </a>
+    <a href="mailto:mecosohandcrafted@gmail.com" aria-label="Email">
+      <svg viewBox="0 0 24 24" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 6.5l8 6 8-6"/></svg>
+    </a>
+  </div>
+</section>
+
+<script src="js/cart.js"></script>
+<script>
+  const bgs = document.querySelectorAll('.hero-bg');
+  let i = 0;
+  bgs[0].classList.add('active');
+  setInterval(() => {
+    bgs[i].classList.remove('active');
+    i = (i + 1) % bgs.length;
+    bgs[i].classList.add('active');
+  }, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cart — Mecoso Handcrafted</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="index.html" class="wordmark-btn">
+    <img src="assets/logo_text.jpeg" alt="Mecoso Handcrafted" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'wordmark-text',textContent:'Mecoso Handcrafted'}))">
+  </a>
+  <button class="hamburger" aria-label="Menu"><span></span><span></span><span></span><span class="menu-badge"></span></button>
+</nav>
+
+<div class="scrim"></div>
+<div class="nav-drawer">
+  <a href="index.html">Home</a>
+  <a href="catalog.html">Catalog</a>
+  <a href="cart.html">Cart <span class="drawer-cart-count"></span></a>
+</div>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="eyebrow">Your Selection</div>
+    <h1>Cart</h1>
+    <div class="rule"></div>
+  </div>
+
+  <div class="cart-layout">
+    <div id="itemsCol"></div>
+
+    <div class="summary-box">
+      <h3>Order Summary</h3>
+      <div id="summaryRows"></div>
+      <div class="summary-row total"><span>Total</span><span id="totalAmt">₦0</span></div>
+
+      <div class="form-group">
+        <label for="buyerEmail">Email Address</label>
+        <input type="email" id="buyerEmail" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="buyerAddress">Delivery Address</label>
+        <textarea id="buyerAddress" placeholder="Street, city, state" required></textarea>
+      </div>
+      <div class="form-error" id="formError">Please enter a valid email and delivery address.</div>
+
+      <button class="btn-gold-full" id="buyBtn">Buy</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">Mecoso Handcrafted &middot; Every piece painted, cut and stitched by hand</footer>
+
+<script src="js/cart.js"></script>
+<script>
+  const itemsCol = document.getElementById('itemsCol');
+  const summaryRows = document.getElementById('summaryRows');
+  const totalAmt = document.getElementById('totalAmt');
+
+  function renderCart() {
+    const cart = getCart();
+    const ids = Object.keys(cart);
+
+    if (ids.length === 0) {
+      itemsCol.innerHTML = `<div class="empty-cart">Your cart is empty.<br><br><a href="catalog.html" class="btn-gold">Browse the Collection</a></div>`;
+      summaryRows.innerHTML = '';
+      totalAmt.textContent = formatNaira(0);
+      document.getElementById('buyBtn').disabled = true;
+      return;
+    }
+    document.getElementById('buyBtn').disabled = false;
+
+    itemsCol.innerHTML = ids.map(id => {
+      const p = PRODUCTS.find(p => p.id === id);
+      const qty = cart[id];
+      return `
+        <div class="cart-item">
+          <img class="item-img" src="${p.img}" alt="${p.name}">
+          <div class="item-info">
+            <h4>${p.name}</h4>
+            <div class="item-cat">${p.categoryLabel}</div>
+            <a href="#" class="remove-link" onclick="removeFromCart('${p.id}');return false;">Remove</a>
+          </div>
+          <div class="qty-controls">
+            <button onclick="changeQty('${p.id}',-1)">−</button>
+            <span>${qty}</span>
+            <button onclick="changeQty('${p.id}',1)">+</button>
+          </div>
+          <div class="item-price">${formatNaira(p.price * qty)}</div>
+        </div>
+      `;
+    }).join('');
+
+    summaryRows.innerHTML = ids.map(id => {
+      const p = PRODUCTS.find(p => p.id === id);
+      const qty = cart[id];
+      return `<div class="summary-row"><span>${p.name} × ${qty}</span><span>${formatNaira(p.price * qty)}</span></div>`;
+    }).join('');
+
+    totalAmt.textContent = formatNaira(cartTotal());
+  }
+
+  document.getElementById('buyBtn').addEventListener('click', () => {
+    const email = document.getElementById('buyerEmail').value.trim();
+    const address = document.getElementById('buyerAddress').value.trim();
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const errEl = document.getElementById('formError');
+
+    if (!emailValid || !address) {
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+
+    const cart = getCart();
+    const items = Object.entries(cart).map(([id, qty]) => {
+      const p = PRODUCTS.find(p => p.id === id);
+      return { id, name: p.name, categoryLabel: p.categoryLabel, price: p.price, qty };
+    });
+
+    const order = { email, address, items, total: cartTotal() };
+    localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+    window.location.href = 'checkout.html';
+  });
+
+  (async function () {
+    await catalogReady;
+    renderCart();
+  })();
+</script>
+</body>
+</html>
